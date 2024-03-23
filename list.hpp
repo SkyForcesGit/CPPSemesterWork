@@ -9,10 +9,13 @@
 /// \classes
 /// • List
 
-#ifndef CPPPROJECT_LIST_H
-#define CPPPROJECT_LIST_H
+#ifndef SEMESTERWORK_LIST_H
+#define SEMESTERWORK_LIST_H
 
 #include <iostream>
+#include <random>
+#include <cstdint>
+#include <initializer_list>
 
 /// \namespace Пространство имен DataStructures содержит в себе
 /// классы-реализации двух структур данных: двусвязного списка в виде
@@ -21,7 +24,8 @@
 ///
 /// Доступные классы:
 /// \n • OrderedHashTable;
-/// \n • List.
+/// \n • List;
+/// \n • Record.
 namespace DataStructures {
 // Объявление классов.
 
@@ -30,19 +34,21 @@ namespace DataStructures {
     /// списком.
     ///
     /// Публичные методы:
-    /// \n • NodeType pop_front();
-    /// \n • NodeType pop_back();
-    /// \n • void erase(const size_t&);
-    /// \n • size_t length() const noexcept;
+    /// \n • NodeType pop_front()
+    /// \n • NodeType pop_back()
+    /// \n • void erase(const size_t&)
+    /// \n • size_t length() const noexcept
     /// \n • Iterator begin() const
     /// \n • Iterator end() const noexcept
     /// \n • Iterator rbegin() const
     /// \n • Iterator rend() const noexcept
-    /// \n • NodeType& operator [] (const size_t& index);
-    /// \n • Node* push_front(const NodeType& data)
-    /// \n • Node* push_back(const NodeType& data)
-    /// \n • Node* at(const size_t& index)
-    /// \n • Node* insert(const size_t& index, const NodeType& value)
+    /// \n • NodeType& operator [] (const size_t& index)
+    /// \n • void push_front(const NodeType& data)
+    /// \n • void push_back(const NodeType& data)
+    /// \n • void insert(const size_t& index, const NodeType& value)
+    /// \n • void sort(const size_t& low = 0, const size_t& high = -1,
+    ///                int8_t (*comp)(const void*, const void*) = nullptr)
+    /// \n • bool empty() const noexcept
     ///
     /// \tparam NodeType Тип данных, который предполагается для использования
     /// в качестве "контейнера" для считываемой и обрабатываемой информации.
@@ -61,9 +67,6 @@ namespace DataStructures {
                 friend class List;
             };
 
-            size_t length_;
-            Node *head_, *tail_;
-        public:
             /// \class класс Iterator предоставляет объект-итератор, дающий
             /// возможность более комфортно итерироваться по элементам списка.
             ///
@@ -72,27 +75,38 @@ namespace DataStructures {
             /// \n • Iterator& operator ++ () noexcept
             /// \n • Iterator* operator ++ (int) noexcept
             /// \n • Iterator& operator -- () noexcept
-            /// \n • terator* operator -- (int) noexcept
-            /// \n • bool operator != (const Iterator& iterator) noexcept
-            /// \n • NodeType operator * ()
+            /// \n • Iterator* operator -- (int) noexcept
+            /// \n • bool operator != (const Iterator& iterator) const noexcept
+            /// \n • NodeType operator * () const
             class Iterator {
-                private:
-                    const Node* current_node;
-                public:
-                    explicit Iterator(const Node*) noexcept;
+            private:
+                const Node* current_node;
+            public:
+                explicit Iterator(const Node*) noexcept;
 
-                    Iterator& operator = (const Node*) noexcept;
-                    Iterator& operator ++ () noexcept;
-                    Iterator operator ++ (int) noexcept;
-                    Iterator& operator -- () noexcept;
-                    Iterator operator -- (int) noexcept;
-                    bool operator != (const Iterator&) noexcept;
-                    NodeType operator * ();
+                Iterator& operator = (const Node*) noexcept;
+                Iterator& operator ++ () noexcept;
+                Iterator operator ++ (int) noexcept;
+                Iterator& operator -- () noexcept;
+                Iterator operator -- (int) noexcept;
+                bool operator != (const Iterator&) const noexcept;
+                NodeType operator * () const;
 
                 friend class List;
             };
 
+            size_t length_;
+            Node *head_, *tail_;
+
+            Node* at(const size_t&);
+            size_t partition(const size_t&, const size_t&,
+                             int8_t (*)(const void*, const void*));
+        public:
             explicit List() noexcept;
+            [[maybe_unused]]
+            List(std::initializer_list<NodeType>);
+            [[maybe_unused]]
+            List(const List<NodeType>&);
             ~List();
 
             NodeType pop_front();
@@ -104,17 +118,24 @@ namespace DataStructures {
             [[maybe_unused]]
             void insert(const size_t&, const NodeType&);
 
-            Node* at(const size_t&);
             NodeType& operator [] (const size_t&);
+
+            [[maybe_unused]]
+            void sort(const size_t& = 0, const size_t& = -1,
+                      int8_t (*)(const void*, const void*) = nullptr);
 
             [[maybe_unused]] [[nodiscard]]
             inline size_t length() const noexcept;
-            inline Iterator begin() const;
+            [[maybe_unused]] [[nodiscard]]
+            inline Iterator begin() const noexcept;
+            [[maybe_unused]] [[nodiscard]]
             inline Iterator end() const noexcept;
-            [[maybe_unused]]
-            inline Iterator rbegin() const;
-            [[maybe_unused]]
+            [[maybe_unused]] [[nodiscard]]
+            inline Iterator rbegin() const noexcept;
+            [[maybe_unused]] [[nodiscard]]
             inline Iterator rend() const noexcept;
+            [[maybe_unused]] [[nodiscard]]
+            inline bool empty() const noexcept;
     };
     // Определения методов классов.
 /* ================================= Iterator ================================= */
@@ -182,9 +203,9 @@ namespace DataStructures {
     ///
     /// \param iterator Объект-итератор для сравнения.
     ///
-    /// \return Булевое значение.
+    /// \return Булево значение.
     template <class T>
-    bool List<T>::Iterator::operator != (const Iterator& iterator) noexcept {
+    bool List<T>::Iterator::operator != (const Iterator& iterator) const noexcept {
         return this->current_node != iterator.current_node;
     }
 
@@ -192,7 +213,7 @@ namespace DataStructures {
     ///
     /// \return Значение узла списка указанного при создании типа.
     template <class T>
-    T List<T>::Iterator::operator * ()  {
+    T List<T>::Iterator::operator * () const {
         return this->current_node->value_;
     }
 
@@ -207,20 +228,122 @@ namespace DataStructures {
             value_(value), next_(nullptr), prev_(nullptr) { }
 
 /* ================================== List ================================== */
+// PRIVATE
+
+    /// \brief Позволяет получить узел списка по индексу.
+    ///
+    /// \param index Индекс узла.
+    ///
+    /// \return Указатель на искомый узел.
+    ///
+    /// \throw std::out_of_range Исключение возбуждается, если индекс
+    /// выходит за границы списка.
+    template <class T>
+    List<T>::Node* List<T>::at(const size_t& index) {
+        if (index > (this->length_ - 1)) {
+            throw std::out_of_range("List index is out of range.");
+        }
+        size_t count{};
+        Node* search_ptr;
+
+        if (index < (this->length_ / 2)) {
+            search_ptr = this->head_;
+            while (count != index) {
+                if (search_ptr == nullptr)
+                    return nullptr;
+                search_ptr = search_ptr->next_;
+                count++;
+            }
+        }
+        else {
+            search_ptr = this->tail_;
+            count = this->length_ - 1;
+            while (count != index) {
+                if (search_ptr == nullptr)
+                    return nullptr;
+                search_ptr = search_ptr->prev_;
+                count--;
+            }
+        }
+        return search_ptr;
+    }
+
+    /// \brief Делит список на части, упорядочивает его.
+    ///
+    /// \param low Нижний индекс списка.
+    /// \param high Верхний индекс списка.
+    /// \param comp Функция-компаратор.
+    ///
+    /// \return Точка привязки.
+    template <class T>
+    size_t List<T>::partition(const size_t& low, const size_t& high,
+                              int8_t (*comp)(const void*, const void*)) {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<size_t> distrib(low, high);
+        // Случайный выбор опорной точки.
+        auto pivot{ this->at(distrib(gen))->value_ };
+        size_t i{ low }, j{ high };  // Левый и правый индекс-указатель.
+
+        while (true) {
+            auto i_val{ this->at(i)->value_ };
+            auto j_val{ this->at(j)->value_ };
+
+            // Двигаем левый указатель, пока значение по индексу меньше
+            // опорной точки.
+            while ((comp != nullptr) ? comp(&i_val, &pivot) == -1 : i_val < pivot)
+                i_val = this->at(i += 1)->value_;
+            // Двигаем правый указатель, пока значение по индексу больше
+            // опорной точки.
+            while ((comp != nullptr) ? comp(&j_val, &pivot) == 1 : j_val > pivot)
+                j_val = this->at(j -= 1)->value_;
+
+            // Если указатели пересеклись:
+            if (i >= j)
+                return j;
+
+            // Обмен значениями.
+            std::swap(this->at(i++)->value_,
+                      this->at(j--)->value_);
+        }
+    }
+
+// PUBLIC
 
     /// \brief Стандартный конструктор экземпляра класса List.
     template <class T>
-     List<T>::List() noexcept :
+    List<T>::List() noexcept :
             length_(0ULL), head_(nullptr), tail_(nullptr) { }
+
+    /// \brief Делегирующий конструктор экземпляра класса List с поддержкой
+    /// std::initializer_list.
+    ///
+    /// \param values Значения, которые нужно сохранить в список.
+    template <class T>
+    [[maybe_unused]]
+    List<T>::List(std::initializer_list<T> values) : List() {
+        // Занесение элементов из std::initializer_list в список.
+        for (auto& value : values)
+            this->push_back(value);
+    }
+
+    /// \brief Делегирующий конструктор копирования для экземпляра
+    /// класса List.
+    ///
+    /// \param copy_list Список для копирования.
+    template <class T>
+    [[maybe_unused]]
+    List<T>::List(const List<T>& copy_list) : List() {
+        // Занесение значений из copy_list в новый список.
+        for (auto it : copy_list)
+            this->push_back(*it);
+    }
 
     // Стандартный деструктор экземпляра.
     template <class T>
     List<T>::~List() {
-        Node* temp{ this->head_ };
-        while (temp != nullptr) {
+        while (!this->empty())
             pop_front();
-            temp = this->head_;
-        }
         delete this->head_;
         delete this->tail_;
     }
@@ -230,7 +353,7 @@ namespace DataStructures {
     /// \return Значение, хранящееся в узле списка.
     template <class T>
     T List<T>::pop_front() {
-        if (this->head_ == nullptr)
+        if (this->empty())
             return T{};
 
         this->length_--;
@@ -252,7 +375,7 @@ namespace DataStructures {
     /// \return Значение, хранящееся в узле списка.
     template <class T>
     T List<T>::pop_back() {
-        if (this->tail_ == nullptr)
+        if (this->empty())
             return T{};
 
         this->length_--;
@@ -353,44 +476,6 @@ namespace DataStructures {
         right_node->prev_ = new_node;
     }
 
-    /// \brief Позволяет получить узел списка по индексу.
-    ///
-    /// \param index Индекс узла.
-    ///
-    /// \return Указатель на искомый узел.
-    ///
-    /// \throw std::out_of_range Исключение возбуждается, если индекс
-    /// выходит за границы списка.
-    template <class T>
-    List<T>::Node* List<T>::at(const size_t& index) {
-        if (index > (this->length_ - 1)) {
-            throw std::out_of_range("List index is out of range.");
-        }
-        size_t count{};
-        Node* search_ptr;
-
-        if (index < (this->length_ / 2)) {
-            search_ptr = this->head_;
-            while (count != index) {
-                if (search_ptr == nullptr)
-                    return nullptr;
-                search_ptr = search_ptr->next_;
-                count++;
-            }
-        }
-        else {
-            search_ptr = this->tail_;
-            count = this->length_ - 1;
-            while (count != index) {
-                if (search_ptr == nullptr)
-                    return nullptr;
-                search_ptr = search_ptr->prev_;
-                count--;
-            }
-        }
-        return search_ptr;
-    }
-
     /// \brief Позволяет получить значение, хранящееся в указ. узле.
     ///
     /// \param index Индекс узла.
@@ -399,6 +484,28 @@ namespace DataStructures {
     template <class T>
     T& List<T>::operator [] (const size_t& index) {
         return this->at(index)->value_;
+    }
+
+    /// \brief Реализует алгоритм Хоара. Сортирует список или его часть,
+    /// делит его на части, затем сортирует их.
+    ///
+    /// \param low Нижний индекс списка. Стандартное значение - начало списка.
+    /// \param high Верхний индекс списка. Стандартное значение - конец списка.
+    /// \param comp Функция-компаратор. Без нее пытается метод простым способом
+    /// сравнить два значения.
+    /// Функция должна возвращать -1, если A < B, 0 - если A == B, 1 - если
+    /// A > B.
+    template <class T>
+    [[maybe_unused]]
+    void List<T>::sort(const size_t& low, const size_t& high,
+              int8_t (*comp)(const void*, const void*)) {
+        size_t high_{ (high > this->length_ - 1) ? this->length_ - 1 : high };
+
+        if (low < high_) {
+            size_t pivot{ this->partition(low, high_, comp) };
+            this->sort(low, pivot, comp);
+            this->sort(pivot + 1, high_, comp);
+        }
     }
 
     /// \brief Позволяет получить количество элементов списка.
@@ -414,7 +521,8 @@ namespace DataStructures {
     ///
     /// \return Объект-итератор.
     template <class T>
-    inline List<T>::Iterator List<T>::begin() const {
+    [[maybe_unused]] [[nodiscard]]
+    inline List<T>::Iterator List<T>::begin() const noexcept {
         return Iterator(this->head_);
     }
 
@@ -422,6 +530,7 @@ namespace DataStructures {
     ///
     /// \return Объект-итератор.
     template <class T>
+    [[maybe_unused]] [[nodiscard]]
     inline List<T>::Iterator List<T>::end() const noexcept {
         return Iterator(nullptr);
     }
@@ -430,8 +539,8 @@ namespace DataStructures {
     ///
     /// \return Объект-итератор.
     template <class T>
-    [[maybe_unused]]
-    inline List<T>::Iterator List<T>::rbegin() const {
+    [[maybe_unused]] [[nodiscard]]
+    inline List<T>::Iterator List<T>::rbegin() const noexcept {
         return Iterator(this->tail_);
     }
 
@@ -440,9 +549,18 @@ namespace DataStructures {
     ///
     /// \return Объект-итератор.
     template <class T>
-    [[maybe_unused]]
+    [[maybe_unused]] [[nodiscard]]
     inline List<T>::Iterator List<T>::rend() const noexcept {
         return Iterator(nullptr);
+    }
+
+    /// \brief Проверяет, пуст ли список.
+    ///
+    /// \return Булево значение.
+    template <class T>
+    [[maybe_unused]] [[nodiscard]]
+    inline bool List<T>::empty() const noexcept {
+        return this->length_ == 0;
     }
 }
 

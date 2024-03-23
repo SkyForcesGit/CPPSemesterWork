@@ -8,15 +8,17 @@
 /// • DataStructures
 /// \classes
 /// • OrderedHashTable
+/// • Record
 
-#ifndef CPPPROJECT_ORDERHASHTABLE_H
-#define CPPPROJECT_ORDERHASHTABLE_H
+#ifndef SEMESTERWORK_ORDERHASHTABLE_H
+#define SEMESTERWORK_ORDERHASHTABLE_H
 
 #include <iostream>
 #include <cmath>
 #include <format>
 #include <cstdint>
 #include <utility>
+#include <initializer_list>
 
 #include "list.hpp"
 
@@ -32,9 +34,22 @@
 ///
 /// Доступные классы:
 /// \n • OrderedHashTable;
-/// \n • List.
+/// \n • List;
+/// \n • Record.
 namespace DataStructures {
 // Объявление классов.
+
+    /// \class Класс Record описывает объект записи хеш-таблицы,
+    /// состоящий из строки-ключа и значения типа, указанного в
+    /// качестве "контейнера" для данных при создании хеш-таблицы.
+    template <class HashType>
+    class Record {
+        public:
+            std::string key_;
+            HashType value_;
+
+            explicit Record(std::string, const HashType&) noexcept;
+    };
 
     /// \class Класс OrderedHashTable предоставляет реализацию структуры
     /// данных "хеш-таблица", позволяет эффективно хранить пары "ключ-значение"
@@ -54,7 +69,7 @@ namespace DataStructures {
     template <class HashType>
     class OrderedHashTable {
         private:
-            /// \class Класс KeyException описывает тип исключения,
+            /// \class Класс FileNotFoundError описывает тип исключения,
             /// возбуждаемого при попытке доступа к несуществующему элементу
             /// хеш-таблицы с помощью перегруженного оператора [].
             ///
@@ -62,33 +77,20 @@ namespace DataStructures {
             /// \n • std::string what() noexcept
             class KeyException : public std::exception {
                 private:
-                    std::string key_;
+                    std::string message;
                 public:
+                    [[maybe_unused]]
+                    explicit KeyException(const char*) noexcept;
                     explicit KeyException(std::string) noexcept;
 
-                    using std::exception::what;
-                    [[maybe_unused]]
-                    std::string what() noexcept;
-
-                friend class OrderedHashTable;
-            };
-
-            /// \class Класс Record описывает объект записи хеш-таблицы,
-            /// состоящий из строки-ключа и значения типа, указанного в
-            /// качестве "контейнера" для данных при создании хеш-таблицы.
-            class Record {
-                private:
-                    std::string key_;
-                    HashType value_;
-                public:
-                    explicit Record(std::string, const HashType&)
-                        noexcept;
+                    [[maybe_unused]] [[nodiscard]]
+                    const char* what() const noexcept override;
 
                 friend class OrderedHashTable;
             };
 
             // Статические константы класса.
-            static inline constexpr size_t MIN_TABLE_SIZE{ 64 };    ///< \brief Минимальный размер хеш-таблицы.
+            static inline constexpr size_t MIN_TABLE_SIZE{ 64 };     ///< \brief Минимальный размер хеш-таблицы.
             static inline constexpr uint32_t GROWTH_RATE{ 2 };       ///< \brief Коэффициент расширения хеш-таблицы.
             static inline constexpr double MAX_UTIL_PERCENT{ 0.5 };  ///< \brief Коэффициент заполнения.
                                                                      ///<
@@ -97,8 +99,8 @@ namespace DataStructures {
 
             size_t size_{ MIN_TABLE_SIZE };  ///< \brief "Физический" размер хеш-таблицы.
             uint32_t record_count_;
-            List<Record*>** record_arr_;     ///< \brief Массив двусвязных списков для пар
-                                             ///< "ключ-значение".
+            List<Record<HashType>*>** record_arr_;     ///< \brief Массив двусвязных списков для пар
+                                                       ///< "ключ-значение".
             List<std::string>* key_list_;    ///< \brief Список ключей в порядке их добавления.
                                              ///<
                                              ///< Благодаря ему хеш-таблицу можно
@@ -109,9 +111,11 @@ namespace DataStructures {
                                    const size_t& = 0) const noexcept;
             void expand();
         public:
-            explicit OrderedHashTable() noexcept;
+            explicit OrderedHashTable(const size_t& = 0);
             [[maybe_unused]]
-            explicit OrderedHashTable(const size_t&) noexcept;
+            OrderedHashTable(std::initializer_list<Record<HashType>>);
+            [[maybe_unused]]
+            OrderedHashTable(const OrderedHashTable<HashType>&);
             ~OrderedHashTable();
 
             [[nodiscard]] [[maybe_unused]]
@@ -120,48 +124,47 @@ namespace DataStructures {
             inline const uint32_t& length() const noexcept;
 
             [[maybe_unused]]
-            void insert(const std::string& key, const HashType& value);
+            void insert(const std::string&, const HashType&);
             [[maybe_unused]]
-            void erase(const std::string& key);
+            void erase(const std::string&);
             [[maybe_unused]]
             HashType pop();
-            HashType get(const std::string& key);
-            HashType& operator [] (const std::string& key);
+            HashType get(const std::string&) const;
+            HashType& operator [] (const std::string&) const;
     };
 
 // Определения методов классов.
-/* ============================== KeyException ============================== */
+/* ============================== FileNotFoundError ============================== */
 
     /// \brief Стандартный конструктор экземпляра класса
-    /// OrderedHashTable::KeyException.
+    /// OrderedHashTable::FileNotFoundError.
     ///
-    /// Задает сообщение об ошибке и сразу же выводит в поток
-    /// std::cerr.
-    ///
-    /// \param key Строковый ключ, который возбудил исключение.
+    /// \param message Сообщение об ошибке.
     template <class T>
-    OrderedHashTable<T>::KeyException::KeyException(std::string key) noexcept :
-            key_(std::move(key)) {
-        std::cerr << this->what() << std::endl;
-    }
+    OrderedHashTable<T>::KeyException::KeyException(std::string message) noexcept :
+            message(std::move(message)) { }
+
+    /// \brief Стандартный конструктор экземпляра класса
+    /// OrderedHashTable::FileNotFoundError.
+    ///
+    /// \param message Сообщение об ошибке.
+    template <class T>
+    [[maybe_unused]]
+    OrderedHashTable<T>::KeyException::KeyException(const char* message) noexcept :
+            message(message) { }
 
     /// \brief Формирует сообщение о произошедшей ошибке.
     ///
     /// \return Строку с пояснением ошибки и советом.
     template <class T>
     [[maybe_unused]]
-    std::string OrderedHashTable<T>::KeyException::what() noexcept {
-        std::string msg{ std::format("Key (\"{}\") not found. Use "
-                                     ".get() method if you not "
-                                     "sure that record exits.",
-                                     this->key_) };
-        return msg;
+    const char* OrderedHashTable<T>::KeyException::what() const noexcept {
+        return this->message.c_str();
     }
 
 /* ================================= Record ================================= */
 
-    /// \brief Стандартный конструктор экземпляра класса
-    /// OrderedHashTable::Record.
+    /// \brief Стандартный конструктор экземпляра класса Record.
     ///
     /// Позволяет создать объект записи, указав сразу ключ и
     /// значение.
@@ -169,7 +172,7 @@ namespace DataStructures {
     /// \param key Строковый ключ записи.
     /// \param value Значение записи.
     template <class T>
-    OrderedHashTable<T>::Record::Record(std::string key, const T& value) noexcept :
+    Record<T>::Record(std::string key, const T& value) noexcept :
             key_(std::move(key)), value_(value) { }
 
 /* ============================ OrderedHashTable ============================ */
@@ -203,7 +206,8 @@ namespace DataStructures {
         // HASH_CONST_D - константа для наилучшего распределения ключей,
         // описана Кнутом.
         hash = static_cast<uint64_t>(ceil(static_cast<double>(size_arr_) *
-                                          fmod((key_int * HASH_CONST_D), 1)) - 1);
+                                          fmod((key_int * HASH_CONST_D),
+                                               1)) - 1);
         return hash;
     }
 
@@ -215,19 +219,18 @@ namespace DataStructures {
     template <class T>
     void OrderedHashTable<T>::expand() {
         // Создание новой таблицы и ее заполнение двусвязными списками.
-        auto** temp{ new List<Record*>*[this->size_ * GROWTH_RATE] };
+        auto** temp{ new List<Record<T>*>*[this->size_ * GROWTH_RATE] };
 
         for (size_t i{}; i < this->size_ * GROWTH_RATE; i++)
-            temp[i] = new List<Record*>;
+            temp[i] = new List<Record<T>*>;
 
         // Перехеширование ключей по новому размеру, запись ключей в новую
         // таблицу.
-        for (auto it{ this->key_list_->begin() }; it != this->key_list_->end();
-             ++it) {
-            uint64_t index{ hash_function((*it), this->size_ *
+        for (auto it : *(this->key_list_)) {
+            uint64_t index{ hash_function((it), this->size_ *
                                                  GROWTH_RATE) };
-            T value{ this->get((*it)) };
-            auto* record{ new Record((*it), value) };
+            T value{ this->get((it)) };
+            auto* record{ new Record((it), value) };
             temp[index]->push_back(record);
         }
 
@@ -242,20 +245,6 @@ namespace DataStructures {
 
 // PUBLIC
 
-    /// \brief Стандартный конструктор экземпляра класса OrderedHashTable.
-    ///
-    /// Инициализирует хеш-таблицу
-    /// со стандартным размером MIN_TABLE_SIZE.
-    template <class T>
-    OrderedHashTable<T>::OrderedHashTable() noexcept :
-            size_(MIN_TABLE_SIZE), record_count_(0),
-            record_arr_(new List<Record*>*[this->size_]),
-            key_list_(new List<std::string>())
-    {
-        for (size_t item{}; item < this->size_; item++)
-            this->record_arr_[item] = new List<Record*>;
-    }
-
     /// \brief Конструктор экземпляра класса с возможностью указать
     /// размер.
     ///
@@ -265,13 +254,39 @@ namespace DataStructures {
     /// \param size Физический размер хеш-таблицы.
     template <class T>
     [[maybe_unused]]
-    OrderedHashTable<T>::OrderedHashTable(const size_t& size) noexcept :
+    OrderedHashTable<T>::OrderedHashTable(const size_t& size) :
             size_((MIN_TABLE_SIZE > size) ? MIN_TABLE_SIZE : size),
-            record_count_(0), record_arr_(new List<Record*>*[this->size_]),
+            record_count_(0), record_arr_(new List<Record<T>*>*[this->size_]),
             key_list_(new List<std::string>())
     {
         for (size_t item{}; item < this->size_; item++)
-            this->record_arr_[item] = new List<Record*>;
+            this->record_arr_[item] = new List<Record<T>*>;
+    }
+
+    /// \brief Конструктор экземпляра класса OrderedHashTable с поддержкой
+    /// std::initializer_list.
+    ///
+    /// \param values Значения (экземпляры класса Record), которые нужно
+    /// сохранить в хеш-таблицу.
+    template <class T>
+    [[maybe_unused]]
+    OrderedHashTable<T>::OrderedHashTable(std::initializer_list<Record<T>> values) :
+            OrderedHashTable() {
+        // Занесение элементов из std::initializer_list в таблицу.
+        for (auto& value : values)
+            this->insert(value.key_, value.value_);
+    }
+
+    /// \brief Конструктор копирования для экземпляра класса OrderedHashTable.
+    ///
+    /// \param copy_table Хеш-таблица для копирования.
+    template <class T>
+    [[maybe_unused]]
+    OrderedHashTable<T>::OrderedHashTable(const OrderedHashTable<T>& copy_table) :
+            OrderedHashTable(copy_table.size_) {
+        // Занесение значений из copy_table в новую таблицу.
+        for (auto it : *(copy_table.keys()))
+            this->insert(it, copy_table[it]);
     }
 
     // Стандартный деструктор экземпляра.
@@ -317,11 +332,11 @@ namespace DataStructures {
     [[maybe_unused]]
     void OrderedHashTable<T>::insert(const std::string& key, const T& value) {
         size_t index{ hash_function(key) };
-        List<Record*>* table_cell{ this->record_arr_[index] };
+        List<Record<T>*>* table_cell{ this->record_arr_[index] };
         // Проверка, что ключ существует в списке по указанному хешу.
-        for (auto it{ table_cell->begin() }; it != table_cell->end(); ++it) {
-            if ((*it)->key_ == key) {
-                (*it)->value_ = value;
+        for (auto it : *table_cell) {
+            if (it->key_ == key) {
+                it->value_ = value;
                 return;
             }
         }
@@ -345,24 +360,24 @@ namespace DataStructures {
     void OrderedHashTable<T>::erase(const std::string& key) {
         size_t index{ hash_function(key) };
         size_t list_ind{};
-        List<Record*>* table_cell{ this->record_arr_[index] };
+        List<Record<T>*>* table_cell{ this->record_arr_[index] };
         // Поиск ключа в списке по указанному хешу.
-        for (auto it{ table_cell->begin() }; it != table_cell->end();
-                ++it, list_ind++) {
-            if ((*it)->key_ == key) {
+        for (auto it : *table_cell) {
+            if (it->key_ == key) {
                 table_cell->erase(list_ind);
                 this->record_count_--;
                 break;
             }
+            list_ind++;
         }
         // Поиск ключа в общем списке ключей.
         list_ind = 0;
-        for (auto it{ this->key_list_->begin() };
-                it != this->key_list_->end() ; ++it, ++list_ind) {
-            if ((*it) == key) {
+        for (auto it : *(this->key_list_)) {
+            if (it == key) {
                 this->key_list_->erase(list_ind);
                 return;
             }
+            list_ind++;
         }
     }
 
@@ -379,8 +394,8 @@ namespace DataStructures {
         // элемента для извлечения по нему.
         std::string key{ this->key_list_->pop_back() };
         size_t index{ hash_function(key) };
-        List<Record*>* table_cell{ this->record_arr_[index] };
-        Record *popped_record{ table_cell->pop_back() };
+        List<Record<T>*>* table_cell{ this->record_arr_[index] };
+        Record<T> *popped_record{ table_cell->pop_back() };
         T ret_val{ popped_record->value_ };
 
         // Удаление извлеченного элемента.
@@ -397,13 +412,13 @@ namespace DataStructures {
     ///
     /// \return Найденное значение ключа или стандартное значение.
     template <class T>
-    T OrderedHashTable<T>::get(const std::string& key) {
+    T OrderedHashTable<T>::get(const std::string& key) const {
         size_t index{ hash_function(key) };
-        List<Record*>* table_cell{ this->record_arr_[index] };
+        List<Record<T>*>* table_cell{ this->record_arr_[index] };
         // Поиск элемента в списке по указанному хешу.
-        for (auto it{ table_cell->begin() }; it != table_cell->end(); ++it) {
-            if ((*it)->key_ == key) {
-                T ret_val = (*it)->value_;
+        for (auto it : *table_cell) {
+            if (it->key_ == key) {
+                T ret_val = it->value_;
                 return ret_val;
             }
         }
@@ -422,16 +437,18 @@ namespace DataStructures {
     /// если элемент с указанным ключом не найден. Рекомендуется использовать
     /// .get(), если присутствие ключа не точно.
     template <class T>
-    T& OrderedHashTable<T>::operator [] (const std::string& key) {
+    T& OrderedHashTable<T>::operator [] (const std::string& key) const {
         size_t index{ hash_function(key) };
-        List<Record*>* table_cell{ this->record_arr_[index] };
-        // Поиск элемента в списке по указанному хешу.
-        for (auto it{ table_cell->begin() }; it != table_cell->end(); ++it) {
-            if ((*it)->key_ == key) {
-                return (*it)->value_;
+        List<Record<T>*>* table_cell{ this->record_arr_[index] };
+            // Поиск элемента в списке по указанному хешу.
+            for (auto it : *table_cell) {
+                if (it->key_ == key) {
+                    return it->value_;
+                }
             }
-        }
-        throw KeyException(key);
+            throw KeyException(std::format("Key '{}' not found. "
+                                           "Use 'get' method, if you're not "
+                                           "sure that item exists.", key));
     }
 }
 
