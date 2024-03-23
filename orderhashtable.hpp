@@ -69,7 +69,7 @@ namespace DataStructures {
     template <class HashType>
     class OrderedHashTable {
         private:
-            /// \class Класс FileNotFoundError описывает тип исключения,
+            /// \class Класс KeyException описывает тип исключения,
             /// возбуждаемого при попытке доступа к несуществующему элементу
             /// хеш-таблицы с помощью перегруженного оператора [].
             ///
@@ -134,10 +134,10 @@ namespace DataStructures {
     };
 
 // Определения методов классов.
-/* ============================== FileNotFoundError ============================== */
+/* ============================== KeyException ============================== */
 
     /// \brief Стандартный конструктор экземпляра класса
-    /// OrderedHashTable::FileNotFoundError.
+    /// OrderedHashTable::KeyException.
     ///
     /// \param message Сообщение об ошибке.
     template <class T>
@@ -145,7 +145,7 @@ namespace DataStructures {
             message(std::move(message)) { }
 
     /// \brief Стандартный конструктор экземпляра класса
-    /// OrderedHashTable::FileNotFoundError.
+    /// OrderedHashTable::KeyException.
     ///
     /// \param message Сообщение об ошибке.
     template <class T>
